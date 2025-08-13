@@ -1,0 +1,14 @@
+[Unit]
+Description=Setup Virtual CAN Interface
+After=network.target
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/sbin/ip link add dev vcan0 type vcan
+ExecStart=/sbin/ip link set up vcan0
+ExecStop=/sbin/ip link set down vcan0
+ExecStop=/sbin/ip link delete vcan0
+
+[Install]
+WantedBy=multi-user.target

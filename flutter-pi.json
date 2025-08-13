@@ -1,0 +1,45 @@
+{
+  "app_id": "automotive_dashboard",
+  "executable_path": "./build/flutter_assets",
+  "width": 1024,
+  "height": 600,
+  "fullscreen": true,
+  "orientation": "landscape",
+  "pixel_format": "RGB565",
+  "refresh_rate": 60,
+  "flutter_engine": {
+    "dart_entrypoint": "main",
+    "dart_entrypoint_args": [
+      "--enable-dart-profiling",
+      "--dart-flags=--no-sound-null-safety"
+    ]
+  },
+  "input": {
+    "touchscreen": {
+      "enabled": true,
+      "device": "/dev/input/event0",
+      "rotate": 0
+    },
+    "keyboard": {
+      "enabled": true,
+      "device": "/dev/input/event1"
+    }
+  },
+  "gpu": {
+    "enabled": true,
+    "device": "/dev/dri/card0",
+    "renderer": "opengl"
+  },
+  "environment": {
+    "CAN_INTERFACE": "can0",
+    "USE_REAL_CAN": "true",
+    "FLUTTER_PI_BUILD": "true",
+    "LD_LIBRARY_PATH": "/usr/local/lib:$LD_LIBRARY_PATH"
+  },
+  "system": {
+    "setup_can": true,
+    "can_bitrate": 500000,
+    "enable_watchdog": true,
+    "log_level": "info"
+  }
+}

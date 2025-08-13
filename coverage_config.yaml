@@ -1,0 +1,34 @@
+# Code Coverage Configuration for Automotive Flutter Demo
+
+# Minimum coverage thresholds
+thresholds:
+  global: 80  # Global minimum coverage
+  per_file: 70  # Minimum coverage per file
+  
+# Files and directories to include in coverage
+include:
+  - lib/**/*.dart
+
+# Files and directories to exclude from coverage
+exclude:
+  - lib/**/*.g.dart           # Generated files
+  - lib/**/*.freezed.dart     # Freezed generated files
+  - lib/main.dart            # Main entry point
+  - lib/platforms/**         # Platform-specific code
+  - test/**                  # Test files themselves
+  - lib/**/mock_*.dart       # Mock files
+
+# Coverage report formats
+reports:
+  - lcov     # For CI/CD tools
+  - html     # For human-readable reports
+  - json     # For programmatic access
+
+# Report output directory
+output_dir: coverage/
+
+# Additional settings
+settings:
+  fail_under: 80  # Fail if coverage drops below this
+  print_summary: true  # Print coverage summary to console
+  check_coverage: true  # Check coverage during tests

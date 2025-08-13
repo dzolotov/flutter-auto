@@ -1,0 +1,154 @@
+# Flutter/Dart/Pub related
+**/doc/api/
+**/ios/Flutter/.last_build_id
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.packages
+.pub-cache/
+.pub/
+/build/
+dashboard/build/
+flutter-pi-src/build/
+
+# Web related
+lib/generated_plugin_registrant.dart
+
+# Symbolication related
+app.*.symbols
+
+# Obfuscation related
+app.*.map.json
+
+# Android Studio will place build artifacts here
+/android/app/debug
+/android/app/profile
+/android/app/release
+
+# macOS
+*.mode1v3
+*.mode2v3
+*.moved-aside
+*.pbxuser
+*.perspectivev3
+**/*sync/
+.sconsign.dblite
+.tags*
+**/.vagrant/
+**/DerivedData/
+Icon?
+**/Pods/
+**/.symlinks/
+profile
+xcuserdata
+**/.generated/
+*.hmap
+*.ipa
+*.xcworkspace
+!default.xcworkspace
+dashboard/macos/Flutter/ephemeral/
+
+# Windows
+flutter_windows.dll
+flutter_windows.h
+flutter_messenger.h
+flutter_plugin_registrar.h
+flutter_texture_registrar.h
+flutter_export.h
+flutter_windows.pdb
+
+# Linux
+libflutter_linux_gtk.so
+fl_basic_message_channel.h
+fl_binary_codec.h
+fl_binary_messenger.h
+fl_dart_project.h
+fl_engine.h
+fl_json_message_codec.h
+fl_json_method_codec.h
+fl_message_codec.h
+fl_method_channel.h
+fl_method_codec.h
+fl_method_response.h
+fl_plugin_registrar.h
+fl_plugin_registry.h
+fl_standard_message_codec.h
+fl_standard_method_codec.h
+fl_string_codec.h
+fl_value.h
+fl_view.h
+flutter_linux.h
+
+# IntelliJ
+*.iml
+*.ipr
+*.iws
+.idea/
+
+# VS Code
+.vscode/
+
+# Flutter coverage
+coverage/
+
+# Test related
+test-results/
+test-reports/
+
+# Logs
+*.log
+/tmp/
+
+# Generated files
+*.freezed.dart
+*.g.dart
+
+# macOS generated files
+.DS_Store
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+ENV/
+
+# CMake build directories
+flutter-pi-src/build/
+flutter-pi-src/cmake-build-*/
+flutter-pi-src/CMakeFiles/
+flutter-pi-src/CMakeCache.txt
+flutter-pi-src/cmake_install.cmake
+flutter-pi-src/Makefile
+
+# Flutter-pi specific
+flutter-pi-build/
+flutter-apps/
+
+# Temporary files
+*.swp
+*.swo
+*~
+.#*
+
+# Archive files  
+*.tar
+*.tar.gz
+*.zip
+*.7z
+*.rar
+
+# Database files
+*.db
+*.sqlite
+*.sqlite3
+
+# Node modules (if any)
+node_modules/
+
+# pubspec.lock for library packages
+# Uncomment if this is a library package
+# pubspec.lock
