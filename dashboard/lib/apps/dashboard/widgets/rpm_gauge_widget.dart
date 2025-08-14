@@ -3,7 +3,6 @@ import 'package:flutter/scheduler.dart';
 import 'dart:math' as math;
 
 import '../../../core/theme/automotive_theme.dart';
-import '../../../services/physics_simulation.dart';
 
 /// Улучшенный виджет тахометра (RPM) с физической симуляцией и эффектами
 /// Реализует реалистичное поведение стрелки с быстрым откликом на изменения RPM
@@ -35,8 +34,7 @@ class RpmGaugeWidget extends StatefulWidget {
 class _RpmGaugeWidgetState extends State<RpmGaugeWidget>
     with TickerProviderStateMixin {
   
-  // Физическая симуляция с быстрым откликом для RPM
-  late TachometerPhysics _physics;
+  // Убрана физическая симуляция для упрощения
   
   // Контроллер для 60 FPS обновлений
   late Ticker _ticker;
@@ -61,8 +59,7 @@ class _RpmGaugeWidgetState extends State<RpmGaugeWidget>
     super.initState();
     
     try {
-      // Инициализация физической симуляции с быстрым откликом
-      _physics = TachometerPhysics(initialPosition: widget.idleRpm);
+      // Физическая симуляция упрощена
       
       // Настройка тикера для 60 FPS обновлений
       _ticker = createTicker(_onTick);
@@ -84,11 +81,9 @@ class _RpmGaugeWidgetState extends State<RpmGaugeWidget>
       _targetRpm = widget.rpm.clamp(0.0, widget.maxRpm);
       
       if (widget.enablePhysics) {
-        _physics.setTarget(_targetRpm);
         _ticker.start();
       } else {
         _displayRpm = _targetRpm;
-        _physics.setPosition(_targetRpm);
       }
       
     } catch (e) {
@@ -144,15 +139,12 @@ class _RpmGaugeWidgetState extends State<RpmGaugeWidget>
     }
     
     if (widget.enablePhysics) {
-      _physics.setTarget(_targetRpm);
-      
       // Запуск тикера, если он остановился
-      if (!_ticker.isActive && !_physics.isAtRest) {
+      if (!_ticker.isActive) {
         _ticker.start();
       }
     } else {
       _displayRpm = _targetRpm;
-      _physics.setPosition(_targetRpm);
     }
   }
 
@@ -168,21 +160,20 @@ class _RpmGaugeWidgetState extends State<RpmGaugeWidget>
       
       _lastUpdateTime = elapsed;
       
-      // Обновление физической симуляции
-      final wasUpdated = _physics.update(deltaTime.clamp(1/120, 1/30));
-      
-      if (wasUpdated) {
-        setState(() {
-          _displayRpm = _physics.position;
-        });
+      // Простая интерполяция к целевому значению
+      final diff = _targetRpm - _displayRpm;
+      if (diff.abs() > 10) {
+        _displayRpm += diff * deltaTime * 5.0; // Скорость интерполяции
+        setState(() {});
         
         // Мониторинг FPS
         _frameCount++;
         if (_frameCount % 60 == 0) {
           _averageFPS = 60.0 / (deltaTime * 60);
         }
-      } else if (_physics.isAtRest) {
+      } else {
         // Остановка тикера для экономии ресурсов
+        _displayRpm = _targetRpm;
         _ticker.stop();
       }
       
@@ -264,7 +255,7 @@ class _RpmGaugeWidgetState extends State<RpmGaugeWidget>
               redlineRpm: widget.redlineRpm,
               idleRpm: widget.idleRpm,
               targetRpm: _targetRpm,
-              physics: _physics,
+              velocity: (_targetRpm - _displayRpm).abs(),
               isRedline: _isInRedline,
               redlineIntensity: _redlineAnimation.value,
               averageFPS: _averageFPS,
@@ -338,8 +329,8 @@ class _RpmGaugeWidgetState extends State<RpmGaugeWidget>
               },
             ),
           
-          // Индикатор быстроты изменения RPM
-          if (widget.enablePhysics && _physics.velocity.abs() > 100)
+          // Индикатор быстроты изменения RPM (упрощенный)
+          if (widget.enablePhysics && (_targetRpm - _displayRpm).abs() > 200)
             Padding(
               padding: const EdgeInsets.only(top: 4),
               child: Container(
@@ -350,7 +341,7 @@ class _RpmGaugeWidgetState extends State<RpmGaugeWidget>
                   borderRadius: BorderRadius.circular(1),
                 ),
                 child: FractionallySizedBox(
-                  widthFactor: (_physics.velocity.abs() / 500).clamp(0.0, 1.0),
+                  widthFactor: ((_targetRpm - _displayRpm).abs() / 1000).clamp(0.0, 1.0),
                   child: Container(
                     decoration: BoxDecoration(
                       color: AutomotiveTheme.primaryBlue,
@@ -426,7 +417,7 @@ class EnhancedRpmGaugePainter extends CustomPainter {
   final double redlineRpm;       // Красная зона (опасные обороты)
   final double idleRpm;          // Обороты холостого хода
   final double targetRpm;        // Целевые обороты
-  final TachometerPhysics physics; // Физическая симуляция
+  final double velocity; // Скорость изменения RPM (упрощенная)
   final bool isRedline;          // Флаг красной зоны
   final double redlineIntensity; // Интенсивность эффекта redline
   final double averageFPS;       // Средний FPS
@@ -445,7 +436,7 @@ class EnhancedRpmGaugePainter extends CustomPainter {
     required this.redlineRpm,
     required this.idleRpm,
     required this.targetRpm,
-    required this.physics,
+    this.velocity = 0.0,
     required this.isRedline,
     this.redlineIntensity = 0.0,
     this.averageFPS = 60.0,
@@ -775,8 +766,8 @@ class EnhancedRpmGaugePainter extends CustomPainter {
 
   /// Рисует след RPM для визуального эффекта
   void _drawRpmTrail(Canvas canvas, Offset center, double radius) {
-    if (physics.velocity.abs() > 200.0) { // RPM изменяется быстро
-      final trailLength = (physics.velocity.abs() / 1000.0).clamp(0.05, 0.2);
+    if (velocity > 200.0) { // RPM изменяется быстро
+      final trailLength = (velocity / 1000.0).clamp(0.05, 0.2);
       final currentAngle = _startAngle + (rpm / maxRpm) * _sweepAngle;
       
       final trailPaint = Paint()

@@ -3,7 +3,6 @@ import 'package:flutter/scheduler.dart';
 import 'dart:math' as math;
 
 import '../../../core/theme/automotive_theme.dart';
-import '../../../services/physics_simulation.dart';
 
 /// Виджет спидометра с аналоговым циферблатом и физической симуляцией
 /// Реализует реалистичное поведение стрелки с инерцией и демпфированием
@@ -12,7 +11,6 @@ class SpeedometerWidget extends StatefulWidget {
   final double speed;           // Текущая скорость в км/ч
   final double maxSpeed;        // Максимальная скорость на шкале
   final bool showDigital;       // Показывать ли цифровое значение
-  final bool enablePhysics;     // Включить ли физическую симуляцию
   final VoidCallback? onError;  // Коллбэк для обработки ошибок
 
   const SpeedometerWidget({
@@ -20,7 +18,6 @@ class SpeedometerWidget extends StatefulWidget {
     required this.speed,
     this.maxSpeed = 240.0,        // Увеличено до 240 км/ч для современных авто
     this.showDigital = true,
-    this.enablePhysics = true,
     this.onError,
   });
 
@@ -31,8 +28,6 @@ class SpeedometerWidget extends StatefulWidget {
 class _SpeedometerWidgetState extends State<SpeedometerWidget>
     with TickerProviderStateMixin {
   
-  // Физическая симуляция для реалистичного движения стрелки
-  late SpeedometerPhysics _physics;
   
   // Контроллер анимации для 60 FPS обновлений
   late Ticker _ticker;
@@ -56,22 +51,13 @@ class _SpeedometerWidgetState extends State<SpeedometerWidget>
     super.initState();
     
     try {
-      // Инициализация физической симуляции
-      _physics = SpeedometerPhysics(initialPosition: 0.0);
       
       // Настройка тикера для 60 FPS обновлений
       _ticker = createTicker(_onTick);
       
       // Установка начальных значений
       _targetSpeed = widget.speed.clamp(0.0, widget.maxSpeed);
-      
-      if (widget.enablePhysics) {
-        _physics.setTarget(_targetSpeed);
-        _ticker.start();
-      } else {
-        _displaySpeed = _targetSpeed;
-        _physics.setPosition(_targetSpeed);
-      }
+      _displaySpeed = _targetSpeed;
       
     } catch (e) {
       _handleError('Ошибка инициализации спидометра: $e');
@@ -88,15 +74,6 @@ class _SpeedometerWidgetState extends State<SpeedometerWidget>
         _updateTargetSpeed(widget.speed);
       }
       
-      // Перезапуск или остановка физики при изменении настроек
-      if (oldWidget.enablePhysics != widget.enablePhysics) {
-        if (widget.enablePhysics && !_ticker.isActive) {
-          _ticker.start();
-        } else if (!widget.enablePhysics && _ticker.isActive) {
-          _ticker.stop();
-          _displaySpeed = widget.speed.clamp(0.0, widget.maxSpeed);
-        }
-      }
       
     } catch (e) {
       _handleError('Ошибка обновления спидометра: $e');
@@ -113,16 +90,13 @@ class _SpeedometerWidgetState extends State<SpeedometerWidget>
     
     _targetSpeed = newSpeed.clamp(0.0, widget.maxSpeed);
     
-    if (widget.enablePhysics) {
-      _physics.setTarget(_targetSpeed);
-      
-      // Запуск тикера, если он остановился
-      if (!_ticker.isActive && !_physics.isAtRest) {
-        _ticker.start();
-      }
-    } else {
+    // Запуск тикера, если он остановился
+    if (!_ticker.isActive && (_targetSpeed - _displaySpeed).abs() > 1.0) {
+      _ticker.start();
+    }
+    
+    if (!_ticker.isActive) {
       _displaySpeed = _targetSpeed;
-      _physics.setPosition(_targetSpeed);
     }
   }
 
@@ -138,21 +112,20 @@ class _SpeedometerWidgetState extends State<SpeedometerWidget>
       
       _lastUpdateTime = elapsed;
       
-      // Обновление физической симуляции
-      final wasUpdated = _physics.update(deltaTime.clamp(1/120, 1/30)); // Ограничение deltaTime
-      
-      if (wasUpdated) {
-        setState(() {
-          _displaySpeed = _physics.position;
-        });
+      // Простая интерполяция к целевой скорости
+      final diff = _targetSpeed - _displaySpeed;
+      if (diff.abs() > 0.5) {
+        _displaySpeed += diff * deltaTime * 3.0; // Скорость интерполяции
+        setState(() {});
         
         // Подсчет FPS для мониторинга производительности
         _frameCount++;
         if (_frameCount % 60 == 0) {
           _averageFPS = 60.0 / (deltaTime * 60);
         }
-      } else if (_physics.isAtRest) {
+      } else {
         // Остановка тикера для экономии ресурсов
+        _displaySpeed = _targetSpeed;
         _ticker.stop();
       }
       
@@ -220,7 +193,7 @@ class _SpeedometerWidgetState extends State<SpeedometerWidget>
           speed: _displaySpeed,
           maxSpeed: widget.maxSpeed,
           targetSpeed: _targetSpeed,
-          physics: _physics,
+          velocity: (_targetSpeed - _displaySpeed).abs(),
           averageFPS: _averageFPS,
         ),
         child: widget.showDigital ? _buildDigitalDisplay() : null,
@@ -270,8 +243,8 @@ class _SpeedometerWidgetState extends State<SpeedometerWidget>
             ),
           ),
           
-          // Индикатор физики (только в debug режиме)
-          if (widget.enablePhysics && _ticker.isActive)
+          // Индикатор скорости изменения (только в debug режиме)
+          if (_ticker.isActive && (_targetSpeed - _displaySpeed).abs() > 5.0)
             Padding(
               padding: const EdgeInsets.only(top: 4),
               child: Container(
@@ -282,7 +255,7 @@ class _SpeedometerWidgetState extends State<SpeedometerWidget>
                   borderRadius: BorderRadius.circular(1),
                 ),
                 child: FractionallySizedBox(
-                  widthFactor: (_physics.velocity.abs() / 50).clamp(0.0, 1.0),
+                  widthFactor: ((_targetSpeed - _displaySpeed).abs() / 50).clamp(0.0, 1.0),
                   child: Container(
                     decoration: BoxDecoration(
                       color: AutomotiveTheme.primaryBlue,
@@ -356,7 +329,7 @@ class EnhancedSpeedometerPainter extends CustomPainter {
   final double speed;              // Текущая отображаемая скорость
   final double maxSpeed;           // Максимальная скорость на шкале
   final double targetSpeed;        // Целевая скорость (для эффектов)
-  final SpeedometerPhysics physics; // Физическая симуляция
+  final double velocity; // Скорость изменения (упрощенная)
   final double averageFPS;         // Средний FPS для оптимизации
   
   // Константы для угловых расчетов (охват 270 градусов)
@@ -372,7 +345,7 @@ class EnhancedSpeedometerPainter extends CustomPainter {
     required this.speed,
     required this.maxSpeed,
     required this.targetSpeed,
-    required this.physics,
+    this.velocity = 0.0,
     this.averageFPS = 60.0,
   });
 
@@ -652,8 +625,8 @@ class EnhancedSpeedometerPainter extends CustomPainter {
 
   /// Рисует след скорости для визуального эффекта
   void _drawSpeedTrail(Canvas canvas, Offset center, double radius) {
-    if (physics.velocity.abs() > 5.0) { // Показываем след только при быстром движении
-      final trailLength = (physics.velocity.abs() / 100.0).clamp(0.1, 0.3);
+    if (velocity > 5.0) { // Показываем след только при быстром движении
+      final trailLength = (velocity / 100.0).clamp(0.1, 0.3);
       final currentAngle = _startAngle + (speed / maxSpeed) * _sweepAngle;
       
       final trailPaint = Paint()

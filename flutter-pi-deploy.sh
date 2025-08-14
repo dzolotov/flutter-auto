@@ -673,15 +673,21 @@ ENDSSH
 ################################################################################
 
 copy_obd_simulator() {
-    log_step "Копирование OBD симулятора"
+    log_step "Копирование физического OBD симулятора"
     
-    # Проверяем наличие симулятора локально
-    if [ -f "$SCRIPT_DIR/python_can_simulator/can_simulator.py" ]; then
-        log_info "Копируем OBD симулятор на Pi..."
-        scp "$SCRIPT_DIR/python_can_simulator/can_simulator.py" "$SSH_HOST:~/obd_sim.py"
-        log_success "OBD симулятор скопирован"
+    # Физический симулятор уже должен быть на Pi, но проверим
+    ssh "$SSH_HOST" "ls -la ~/physics_obd_sim.py 2>/dev/null" > /dev/null 2>&1
+    if [ $? -eq 0 ]; then
+        log_success "Физический OBD симулятор найден на Pi"
     else
-        log_warning "OBD симулятор не найден локально: $SCRIPT_DIR/python_can_simulator/can_simulator.py"
+        # Если нет физического, проверяем старый симулятор
+        if [ -f "$SCRIPT_DIR/python_can_simulator/can_simulator.py" ]; then
+            log_info "Копируем fallback CAN симулятор на Pi..."
+            scp "$SCRIPT_DIR/python_can_simulator/can_simulator.py" "$SSH_HOST:~/can_simulator.py"
+            log_success "CAN симулятор скопирован"
+        else
+            log_warning "Симуляторы не найдены"
+        fi
     fi
 }
 
@@ -707,11 +713,16 @@ if ip link show vcan0 &>/dev/null; then
     pkill -f obd_sim.py || true
     sleep 1
     
-    # Проверяем наличие симулятора
-    if [ -f ~/obd_sim.py ]; then
-        echo "Запуск OBD симулятора на vcan0..."
-        # Запускаем в фоне и перенаправляем вывод
-        nohup python3 ~/obd_sim.py --interface vcan0 > ~/can_simulator.log 2>&1 &
+    # Проверяем наличие физического симулятора
+    if [ -f ~/physics_obd_sim.py ]; then
+        echo "Запуск физического OBD симулятора на vcan0..."
+        # Останавливаем старые симуляторы если запущены
+        pkill -f 'can_simulator.py' 2>/dev/null || true
+        pkill -f 'obd_sim.py' 2>/dev/null || true
+        pkill -f 'physics_obd_sim.py' 2>/dev/null || true
+        
+        # Запускаем физический симулятор в фоне
+        nohup python3 ~/physics_obd_sim.py > ~/physics_sim.log 2>&1 &
         SIM_PID=$!
         
         # Даем время на запуск
@@ -719,15 +730,27 @@ if ip link show vcan0 &>/dev/null; then
         
         # Проверяем что процесс запустился
         if kill -0 $SIM_PID 2>/dev/null; then
-            echo "✓ OBD симулятор запущен (PID: $SIM_PID)"
+            echo "✓ Физический OBD симулятор запущен (PID: $SIM_PID)"
+            echo "  Логи: ~/physics_sim.log"
+        else
+            echo "✗ Ошибка запуска физического симулятора"
+            echo "  Проверьте логи: ~/physics_sim.log"
+            tail -10 ~/physics_sim.log 2>/dev/null || true
+        fi
+    elif [ -f ~/can_simulator.py ]; then
+        # Fallback на старый симулятор
+        echo "Запуск CAN симулятора на vcan0..."
+        nohup python3 ~/can_simulator.py > ~/can_simulator.log 2>&1 &
+        SIM_PID=$!
+        sleep 2
+        if kill -0 $SIM_PID 2>/dev/null; then
+            echo "✓ CAN симулятор запущен (PID: $SIM_PID)"
             echo "  Логи: ~/can_simulator.log"
         else
-            echo "✗ Ошибка запуска OBD симулятора"
-            echo "  Проверьте логи: ~/can_simulator.log"
-            tail -10 ~/can_simulator.log 2>/dev/null || true
+            echo "✗ Ошибка запуска CAN симулятора"
         fi
     else
-        echo "Предупреждение: OBD симулятор не найден (~/obd_sim.py)"
+        echo "Предупреждение: Симулятор не найден"
     fi
 else
     echo "Предупреждение: Интерфейс vcan0 не найден"
@@ -750,7 +773,7 @@ EOF
     fi
     
     # Добавляем параметры для стабильности
-    FLUTTER_PI_ARGS="$FLUTTER_PI_ARGS --orientation landscape_right --pixelformat RGB565"
+    FLUTTER_PI_ARGS="$FLUTTER_PI_ARGS --orientation landscape_right --pixelformat ARGB8888"
     
     # Запускаем flutter-pi
     log_info "Запуск flutter-pi с параметрами: $FLUTTER_PI_ARGS"

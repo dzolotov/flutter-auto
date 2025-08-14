@@ -2,7 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/theme/automotive_theme.dart';
-import '../../services/random_data_simulator.dart';
+import '../../services/automotive_can_service.dart';
+import '../../models/vehicle_data.dart';
 
 /// Упрощенная версия дэшборда - минималистичный дизайн
 /// Резервный вариант для тестирования базового функционала
@@ -11,7 +12,7 @@ class SimpleDashboard extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final canData = ref.watch(randomDataProvider);
+    final vehicleData = ref.watch(automotiveCanServiceProvider);
     
     return Scaffold(
       backgroundColor: AutomotiveTheme.backgroundDark,
@@ -38,12 +39,12 @@ class SimpleDashboard extends ConsumerWidget {
                     children: [
                       // Спидометр
                       Expanded(
-                        child: _buildSpeedometer(canData),
+                        child: _buildSpeedometer(vehicleData),
                       ),
                       const SizedBox(width: 16),
                       // Тахометр
                       Expanded(
-                        child: _buildTachometer(canData),
+                        child: _buildTachometer(vehicleData),
                       ),
                     ],
                   ),
@@ -59,7 +60,7 @@ class SimpleDashboard extends ConsumerWidget {
                       Expanded(
                         child: _buildInfoCard(
                           'Передача',
-                          canData['gear']?.toString() ?? 'P',
+                          vehicleData.gear ?? 'P',
                           Icons.settings,
                         ),
                       ),
@@ -67,7 +68,7 @@ class SimpleDashboard extends ConsumerWidget {
                       Expanded(
                         child: _buildInfoCard(
                           'Температура',
-                          '${canData['engine_temp']?.toInt() ?? 90}°C',
+                          '${vehicleData.engineTemp.toInt()}°C',
                           Icons.thermostat,
                         ),
                       ),
@@ -75,7 +76,7 @@ class SimpleDashboard extends ConsumerWidget {
                       Expanded(
                         child: _buildInfoCard(
                           'Топливо',
-                          '${canData['fuel_level']?.toInt() ?? 75}%',
+                          '${vehicleData.fuelLevel.toInt()}%',
                           Icons.local_gas_station,
                         ),
                       ),
@@ -83,7 +84,7 @@ class SimpleDashboard extends ConsumerWidget {
                       Expanded(
                         child: _buildInfoCard(
                           'Батарея',
-                          '${canData['battery_voltage']?.toStringAsFixed(1) ?? '12.6'}V',
+                          '${vehicleData.batteryVoltage.toStringAsFixed(1)}V',
                           Icons.battery_full,
                         ),
                       ),
@@ -98,8 +99,8 @@ class SimpleDashboard extends ConsumerWidget {
     );
   }
 
-  Widget _buildSpeedometer(Map<String, dynamic> canData) {
-    final speed = (canData['speed'] ?? 0.0).toDouble();
+  Widget _buildSpeedometer(VehicleData vehicleData) {
+    final speed = vehicleData.speed;
     
     return Container(
       decoration: BoxDecoration(
@@ -139,8 +140,8 @@ class SimpleDashboard extends ConsumerWidget {
     );
   }
 
-  Widget _buildTachometer(Map<String, dynamic> canData) {
-    final rpm = (canData['rpm'] ?? 800.0).toDouble();
+  Widget _buildTachometer(VehicleData vehicleData) {
+    final rpm = vehicleData.rpm;
     final rpmThousands = rpm / 1000;
     final isRedline = rpm > 6500;
     

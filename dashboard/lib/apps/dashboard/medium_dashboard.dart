@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'dart:math' as math;
 
 import '../../core/theme/automotive_theme.dart';
-import '../../services/can_bus_service.dart';
+import '../../services/can_bus_provider.dart';
 import '../../services/audio_service.dart';
 
 /// Основной дэшборд автомобиля с неоновым дизайном
@@ -13,7 +13,7 @@ class MediumDashboard extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final canData = ref.watch(currentCanDataProvider);
+    final canData = ref.watch(canBusProvider);
     
     return Scaffold(
       backgroundColor: AutomotiveTheme.backgroundDark,
@@ -85,17 +85,17 @@ class MediumDashboard extends ConsumerWidget {
                     children: [
                       _buildBottomIndicator(
                         Icons.local_gas_station,
-                        '${(canData['fuelLevel'] ?? 65.0).toInt()}%',
+                        '${(canData['fuel_level'] ?? 65.0).toInt()}%',
                         'ТОПЛИВО',
                         AutomotiveTheme.successGreen,
-                        (canData['fuelLevel'] ?? 100) < 15,
+                        (canData['fuel_level'] ?? 100) < 15,
                       ),
                       _buildBottomIndicator(
                         Icons.thermostat,
-                        '${(canData['engineTemp'] ?? 90.0).toInt()}°C',
+                        '${(canData['engine_temp'] ?? 90.0).toInt()}°C',
                         'ТЕМП.',
                         AutomotiveTheme.accentOrange,
-                        (canData['engineTemp'] ?? 90) > 100,
+                        (canData['engine_temp'] ?? 90) > 100,
                       ),
                       _buildBottomIndicator(
                         Icons.speed,
@@ -261,13 +261,13 @@ class MediumDashboard extends ConsumerWidget {
           Row(
             children: [
               Expanded(child: _buildMiniInfo('ГАЗ', '${(canData['throttle'] ?? 0.0).toInt()}%')),
-              Expanded(child: _buildMiniInfo('LOAD', '${(canData['engineLoad'] ?? 0.0).toInt()}%')),
+              Expanded(child: _buildMiniInfo('LOAD', '${(canData['engine_load'] ?? 0.0).toInt()}%')),
             ],
           ),
           Row(
             children: [
-              Expanded(child: _buildMiniInfo('MODE', useSimulator ? 'SIM' : 'CAN')),
-              Expanded(child: _buildMiniInfo('LINK', useSimulator ? 'OK' : 'VCAN0')),
+              Expanded(child: _buildMiniInfo('MODE', canData['is_connected'] == true ? 'CAN' : 'SIM')),
+              Expanded(child: _buildMiniInfo('LINK', canData['is_connected'] == true ? 'VCAN0' : 'OK')),
             ],
           ),
         ],
@@ -508,11 +508,22 @@ class SimpleGaugePainter extends CustomPainter {
 extension _MediumDashboardHelpers on MediumDashboard {
   /// Получает передачу напрямую из CAN-шины (без расчетов)
   String _getGearFromCAN(Map<String, dynamic> canData) {
-    final gear = (canData['gear'] ?? 1.0).toDouble();
+    final gearValue = canData['gear'] ?? 1.0;
     
-    // Преобразуем числовое значение передачи в строковое представление
-    if (gear <= 0) return 'N';
-    if (gear >= 1 && gear <= 6) return gear.round().toString();
-    return '1'; // Fallback на первую передачу
+    // Если это уже строка, возвращаем как есть
+    if (gearValue is String) {
+      return gearValue;
+    }
+    
+    // Если это число, преобразуем в строку
+    if (gearValue is num) {
+      final gear = gearValue.toDouble();
+      if (gear <= 0) return 'N';
+      if (gear >= 1 && gear <= 6) return gear.round().toString();
+      return '1'; // Fallback на первую передачу
+    }
+    
+    // Fallback для любых других типов
+    return 'P';
   }
 }

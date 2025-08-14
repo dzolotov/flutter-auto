@@ -25,7 +25,7 @@ class VehicleData with _$VehicleData {
   const factory VehicleData({
     @Default(0.0) double speed, // km/h
     @Default(800.0) double rpm, // RPM
-    @Default(90.0) double engineTemp, // °C
+    @Default(20.0) double engineTemp, // °C - холодный старт
     @Default(75.0) double fuelLevel, // %
     @Default(0.0) double throttlePosition, // %
     @Default(0.0) double engineLoad, // %
@@ -34,6 +34,7 @@ class VehicleData with _$VehicleData {
     @Default(2.5) double oilPressure, // bar
     @Default('P') String gear, // P, R, N, D, 1, 2, 3, 4, 5, 6
     @Default(false) bool isConnected,
+    @Default(0.0) double odometer, // км
     DateTime? lastUpdate,
     
     // Warning flags

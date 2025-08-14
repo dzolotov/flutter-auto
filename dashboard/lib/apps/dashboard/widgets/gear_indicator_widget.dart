@@ -3,7 +3,6 @@ import 'package:flutter/scheduler.dart';
 import 'dart:math' as math;
 
 import '../../../core/theme/automotive_theme.dart';
-import '../../../services/physics_simulation.dart';
 
 /// Улучшенный виджет индикатора передач с анимациями и автомобильной логикой
 /// Поддерживает автоматические и механические трансмиссии с реалистичной анимацией переключений

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hive_flutter/hive_flutter.dart';
+import 'dart:ui' as ui;
 
 import 'apps/dashboard/medium_dashboard.dart';
 import 'apps/multimedia/multimedia_app.dart';
@@ -10,6 +11,9 @@ import 'services/can_bus_provider.dart';
 import 'services/automotive_can_service.dart';
 import 'core/theme/automotive_theme.dart';
 import 'widgets/error_boundary.dart';
+
+// Глобальный ключ для RepaintBoundary для снятия скриншотов
+final GlobalKey repaintBoundaryKey = GlobalKey();
 
 /// Главная точка входа в приложение
 /// Демонстрирует различные автомобильные интерфейсы на Flutter
@@ -48,8 +52,11 @@ class AutomotiveApp extends StatelessWidget {
       title: 'Automotive Flutter Demo',
       debugShowCheckedModeBanner: false,
       theme: AutomotiveTheme.darkTheme,
-      home: const DashboardErrorBoundary(
-        child: MultiDisplayApp(),  // Используем мульти-дисплей вместо простой панели
+      home: RepaintBoundary(
+        key: repaintBoundaryKey,
+        child: const DashboardErrorBoundary(
+          child: MultiDisplayApp(),  // Используем мульти-дисплей вместо простой панели
+        ),
       ),
     );
   }

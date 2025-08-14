@@ -1,15 +1,21 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter/rendering.dart';
+import 'dart:ui' as ui;
+import 'dart:io';
+import 'dart:typed_data';
 
 import '../../core/theme/automotive_theme.dart';
 import '../../services/display_manager.dart';
+import '../../services/can_bus_provider.dart';
 import 'widgets/instrument_cluster_display.dart';
 import 'widgets/infotainment_display.dart';
 import 'widgets/heads_up_display.dart';
 import 'widgets/rear_passenger_display.dart';
 import 'widgets/display_configuration_panel.dart';
 import '../dashboard/medium_dashboard.dart';
+import '../../main.dart' show repaintBoundaryKey;
 
 /// Основное приложение мульти-дисплейной системы
 /// Управляет несколькими экранами: приборная панель, инфотейнмент, HUD, задние экраны
@@ -71,9 +77,11 @@ class _MultiDisplayAppState extends ConsumerState<MultiDisplayApp> {
   @override
   void initState() {
     super.initState();
-    // Инициализация дисплейного менеджера
+    // Инициализация дисплейного менеджера и CAN сервиса
     WidgetsBinding.instance.addPostFrameCallback((_) {
       ref.read(displayManagerProvider.notifier).initialize(_displays);
+      // Инициализируем CAN сервис для получения данных от симулятора
+      ref.read(canServiceInitializerProvider);
     });
   }
 
@@ -89,9 +97,9 @@ class _MultiDisplayAppState extends ConsumerState<MultiDisplayApp> {
         elevation: 0,
         actions: [
           IconButton(
-            onPressed: _toggleFullscreen,
+            onPressed: _takeScreenshot,
             icon: Icon(Icons.fullscreen),
-            tooltip: 'Полноэкранный режим',
+            tooltip: 'Сделать скриншот экрана',
           ),
           IconButton(
             onPressed: _showDisplayConfiguration,
@@ -475,9 +483,9 @@ class _MultiDisplayAppState extends ConsumerState<MultiDisplayApp> {
           tooltip: 'Поворот',
         ),
         IconButton(
-          onPressed: _toggleFullscreen,
+          onPressed: _takeScreenshot,
           icon: Icon(Icons.fullscreen, color: Colors.grey[400]),
-          tooltip: 'Полный экран',
+          tooltip: 'Сделать скриншот',
         ),
       ],
     );
@@ -556,6 +564,55 @@ class _MultiDisplayAppState extends ConsumerState<MultiDisplayApp> {
   /// Создает полноэкранный режим
   Widget _buildFullscreenDisplay() {
     return _buildDisplayContent();
+  }
+
+  /// Создание скриншота всего экрана
+  Future<void> _takeScreenshot() async {
+    try {
+      // Получаем RenderRepaintBoundary из глобального ключа
+      RenderRepaintBoundary boundary = repaintBoundaryKey.currentContext!
+          .findRenderObject() as RenderRepaintBoundary;
+      
+      // Ждем завершения отрисовки
+      await WidgetsBinding.instance.endOfFrame;
+      
+      // Создаем изображение
+      ui.Image image = await boundary.toImage(pixelRatio: 1.0);
+      
+      // Конвертируем в PNG
+      ByteData? byteData = await image.toByteData(format: ui.ImageByteFormat.png);
+      Uint8List pngBytes = byteData!.buffer.asUint8List();
+      
+      // Создаем имя файла с датой и временем
+      final now = DateTime.now();
+      final fileName = 'screenshot_${now.year}${now.month.toString().padLeft(2, '0')}${now.day.toString().padLeft(2, '0')}_${now.hour.toString().padLeft(2, '0')}${now.minute.toString().padLeft(2, '0')}${now.second.toString().padLeft(2, '0')}.png';
+      
+      // Сохраняем файл в /tmp
+      final file = File('/tmp/$fileName');
+      await file.writeAsBytes(pngBytes);
+      
+      // Показываем уведомление об успешном сохранении
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Скриншот сохранен: /tmp/$fileName'),
+            backgroundColor: Colors.green.withOpacity(0.8),
+            duration: const Duration(seconds: 3),
+          ),
+        );
+      }
+    } catch (e) {
+      // Показываем ошибку
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Ошибка создания скриншота: $e'),
+            backgroundColor: Colors.red.withOpacity(0.8),
+            duration: const Duration(seconds: 3),
+          ),
+        );
+      }
+    }
   }
 
   /// Переключение полноэкранного режима

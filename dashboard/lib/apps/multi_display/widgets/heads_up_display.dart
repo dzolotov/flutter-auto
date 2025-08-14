@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../services/can_bus_service.dart';
+import '../../../services/can_bus_provider.dart';
 import '../../../core/theme/automotive_theme.dart';
 
 /// Проекционный дисплей (HUD - Heads Up Display)
@@ -11,7 +11,7 @@ class HeadsUpDisplay extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final canData = ref.watch(currentCanDataProvider);
+    final canData = ref.watch(canBusProvider);
     
     return Container(
       color: Colors.black,
