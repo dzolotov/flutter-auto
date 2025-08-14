@@ -364,11 +364,18 @@ class AutomotiveCanService extends StateNotifier<VehicleData> {
   /// Прямое получение всех параметров от симулятора
   Future<void> fetchAllSensorData() async {
     try {
-      // Получаем температуру двигателя
-      final engineTemp = await getEngineTemp();
-      if (engineTemp != null) {
-        _updateVehicleData(engineTemp: engineTemp);
-        print('[CAN] ✓ Direct Engine Temp: ${engineTemp.toStringAsFixed(1)}°C');
+      // Получаем температуру двигателя через OBD2 напрямую
+      try {
+        final tempResponse = await _canBusChannel.invokeMethod('readOBD2', 0x05);
+        if (tempResponse != null && tempResponse is Map) {
+          final tempValue = tempResponse['value'];
+          if (tempValue != null && tempValue is double && tempValue > 0) {
+            _updateVehicleData(engineTemp: tempValue);
+            print('[CAN] ✓ Direct Engine Temp from OBD2: ${tempValue.toStringAsFixed(1)}°C');
+          }
+        }
+      } catch (e) {
+        print('[CAN] Failed to get engine temp via OBD2: $e');
       }
       
       // Получаем уровень топлива через sensors channel
@@ -419,7 +426,7 @@ class AutomotiveCanService extends StateNotifier<VehicleData> {
   Future<double> getEngineTemp() async {
     try {
       final result = await _sensorsChannel.invokeMethod<double>('getEngineTemp');
-      return result ?? 0.0;
+      return result ?? state.engineTemp;
     } catch (e) {
       return state.engineTemp;
     }
