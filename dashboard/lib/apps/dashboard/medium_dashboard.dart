@@ -4,7 +4,6 @@ import 'dart:math' as math;
 
 import '../../core/theme/automotive_theme.dart';
 import '../../services/can_bus_provider.dart';
-import '../../services/audio_service.dart';
 
 /// Основной дэшборд автомобиля с неоновым дизайном
 /// Оптимизирован для экрана 800x480 и работы на Raspberry Pi через flutter-pi
@@ -53,8 +52,6 @@ class MediumDashboard extends ConsumerWidget {
                             _buildGearIndicator(_getGearFromCAN(canData)),
                             const SizedBox(height: 16),
                             _buildInfoPanel(canData),
-                            const SizedBox(height: 12),
-                            _buildMusicButton(ref),
                           ],
                         ),
                       ),
@@ -361,99 +358,6 @@ class MediumDashboard extends ConsumerWidget {
     );
   }
 
-  /// Создает кнопку управления музыкой
-  Widget _buildMusicButton(WidgetRef ref) {
-    final audioState = ref.watch(audioServiceProvider);
-    final audioService = ref.read(audioServiceProvider.notifier);
-    
-    IconData icon;
-    String label;
-    Color color;
-    
-    switch (audioState.runtimeType) {
-      case AudioStateStopped:
-        icon = Icons.music_note;
-        label = 'МУЗЫКА';
-        color = AutomotiveTheme.successGreen;
-        break;
-      case AudioStateLoading:
-        icon = Icons.hourglass_empty;
-        label = 'ЗАГРУЗКА';
-        color = AutomotiveTheme.accentOrange;
-        break;
-      case AudioStatePlaying:
-        icon = Icons.music_off;
-        label = 'СТОП';
-        color = AutomotiveTheme.warningRed;
-        break;
-      default:
-        icon = Icons.music_note;
-        label = 'МУЗЫКА';
-        color = AutomotiveTheme.successGreen;
-        break;
-    }
-    
-    return Expanded(
-      child: GestureDetector(
-        onTap: audioState is AudioStateLoading ? null : () {
-          audioService.toggleMusic();
-        },
-        child: Container(
-          margin: EdgeInsets.symmetric(horizontal: 4),
-          padding: EdgeInsets.all(12),
-          decoration: BoxDecoration(
-            color: color.withOpacity(0.2),
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(
-              color: color,
-              width: 3,
-            ),
-            boxShadow: [
-              BoxShadow(
-                color: color.withOpacity(0.4),
-                blurRadius: 8,
-                offset: Offset(0, 2),
-              ),
-            ],
-          ),
-          child: Row(
-            children: [
-              Icon(
-                icon,
-                color: color,
-                size: 16,
-              ),
-              const SizedBox(width: 4),
-              Expanded(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      audioState is AudioStatePlaying ? '♪ ON' : 'OFF',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 12,
-                        fontWeight: FontWeight.bold,
-                      ),
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    Text(
-                      label,
-                      style: TextStyle(
-                        color: Colors.grey[500],
-                        fontSize: 8,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
 }
 
 // Простой painter для круговых индикаторов
