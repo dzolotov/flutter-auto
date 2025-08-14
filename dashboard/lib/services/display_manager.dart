@@ -95,7 +95,6 @@ class DisplayConfiguration {
 /// Типы дисплеев
 enum DisplayType {
   mediumDashboard,  // Красивая анимированная панель
-  instrumentCluster,
   infotainment,
   headsUp,
   rearPassenger,
@@ -317,8 +316,7 @@ class DisplayManager extends StateNotifier<DisplaySystemState> {
     switch (type) {
       case DisplayType.mediumDashboard:
         return 0.85; // Средне-высокая яркость для анимированной панели
-      case DisplayType.instrumentCluster:
-        return 0.9; // Высокая яркость для приборов
+ // Высокая яркость для приборов
       case DisplayType.infotainment:
         return 0.8; // Средняя яркость
       case DisplayType.headsUp:
@@ -333,8 +331,7 @@ class DisplayManager extends StateNotifier<DisplaySystemState> {
     switch (type) {
       case DisplayType.mediumDashboard:
         return 0; // Альбомная ориентация
-      case DisplayType.instrumentCluster:
-        return 0; // Альбомная ориентация
+ // Альбомная ориентация
       case DisplayType.infotainment:
         return 0; // Альбомная ориентация
       case DisplayType.headsUp:
@@ -351,8 +348,6 @@ extension DisplayTypeExtension on DisplayType {
     switch (this) {
       case DisplayType.mediumDashboard:
         return 'Анимированная панель';
-      case DisplayType.instrumentCluster:
-        return 'Приборная панель';
       case DisplayType.infotainment:
         return 'Инфотейнмент';
       case DisplayType.headsUp:

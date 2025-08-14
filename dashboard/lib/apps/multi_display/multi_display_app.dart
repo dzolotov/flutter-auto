@@ -35,14 +35,6 @@ class _MultiDisplayAppState extends ConsumerState<MultiDisplayApp> {
       type: DisplayType.mediumDashboard,
     ),
     DisplayInfo(
-      id: 'instrument_cluster',
-      name: 'Приборная панель',
-      description: 'Основные показатели автомобиля',
-      icon: Icons.speed,
-      resolution: '1920x720',
-      type: DisplayType.instrumentCluster,
-    ),
-    DisplayInfo(
       id: 'infotainment',
       name: 'Инфотейнмент',
       description: 'Мультимедиа и навигация',
@@ -498,8 +490,6 @@ class _MultiDisplayAppState extends ConsumerState<MultiDisplayApp> {
     switch (selectedDisplay.type) {
       case DisplayType.mediumDashboard:
         return MediumDashboard();
-      case DisplayType.instrumentCluster:
-        return InstrumentClusterDisplay();
       case DisplayType.infotainment:
         return InfotainmentDisplay();
       case DisplayType.headsUp:

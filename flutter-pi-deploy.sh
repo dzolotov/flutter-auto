@@ -700,55 +700,47 @@ run_application() {
     sleep 1
     
     # Запускаем OBD симулятор если есть vcan0
+    log_info "Проверка и запуск OBD симулятора..."
     ssh "$SSH_HOST" << 'EOF'
 if ip link show vcan0 &>/dev/null; then
+    # Останавливаем предыдущий симулятор
+    pkill -f obd_sim.py || true
+    sleep 1
+    
     # Проверяем наличие симулятора
     if [ -f ~/obd_sim.py ]; then
         echo "Запуск OBD симулятора на vcan0..."
-        cd ~ && python3 obd_sim.py --can vcan0 > /dev/null 2>&1 &
+        # Запускаем в фоне и перенаправляем вывод
+        nohup python3 ~/obd_sim.py --interface vcan0 > ~/can_simulator.log 2>&1 &
+        SIM_PID=$!
+        
+        # Даем время на запуск
         sleep 2
+        
+        # Проверяем что процесс запустился
+        if kill -0 $SIM_PID 2>/dev/null; then
+            echo "✓ OBD симулятор запущен (PID: $SIM_PID)"
+            echo "  Логи: ~/can_simulator.log"
+        else
+            echo "✗ Ошибка запуска OBD симулятора"
+            echo "  Проверьте логи: ~/can_simulator.log"
+            tail -10 ~/can_simulator.log 2>/dev/null || true
+        fi
     else
         echo "Предупреждение: OBD симулятор не найден (~/obd_sim.py)"
     fi
+else
+    echo "Предупреждение: Интерфейс vcan0 не найден"
 fi
 EOF
     
     # Проверяем необходимые файлы перед запуском
     log_info "Проверка необходимых файлов..."
-    if ! ssh "$SSH_HOST" << ENDSSH
-        set -e
-        cd "$PI_APPS_DIR/$PROJECT_NAME"
-        
-        echo "Проверка файлов приложения..."
-        if [ ! -f "icudtl.dat" ]; then
-            echo "ERROR: icudtl.dat не найден!"
-            exit 1
-        fi
-        
-        if [ ! -f "kernel_blob.bin" ] && [ ! -f "app.so" ]; then
-            echo "ERROR: Не найден ни kernel_blob.bin, ни app.so!"
-            exit 1
-        fi
-        
-        # Проверяем flutter-pi
-        if ! command -v flutter-pi &> /dev/null; then
-            echo "ERROR: flutter-pi не установлен!"
-            exit 1
-        fi
-        
-        # Проверяем libflutter_engine.so
-        if [ ! -f "/usr/local/lib/libflutter_engine.so" ]; then
-            echo "ERROR: libflutter_engine.so не найден в /usr/local/lib/!"
-            exit 1
-        fi
-        
-        echo "Все необходимые файлы найдены"
-        ls -la
-ENDSSH
-    then
+    if ! ssh "$SSH_HOST" "cd $PI_APPS_DIR/$PROJECT_NAME && [ -f icudtl.dat ] && ([ -f kernel_blob.bin ] || [ -f app.so ]) && command -v flutter-pi >/dev/null && [ -f /usr/local/lib/libflutter_engine.so ]"; then
         log_error "Проверка файлов не прошла"
         exit 1
     fi
+    log_info "Все необходимые файлы найдены"
     
     # Определяем параметры запуска
     FLUTTER_PI_ARGS=""  # По умолчанию debug режим (без флага)

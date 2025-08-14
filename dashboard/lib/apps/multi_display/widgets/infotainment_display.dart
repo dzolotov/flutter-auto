@@ -81,7 +81,7 @@ class _InfotainmentDisplayState extends State<InfotainmentDisplay>
           
           // Нижняя панель быстрого доступа
           Container(
-            height: 80,
+            height: 60,
             color: AutomotiveTheme.cardDark,
             child: _buildQuickAccessBar(),
           ),
@@ -154,7 +154,7 @@ class _InfotainmentDisplayState extends State<InfotainmentDisplay>
   /// Главная страница
   Widget _buildHomeTab() {
     return SingleChildScrollView(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(8),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -165,7 +165,7 @@ class _InfotainmentDisplayState extends State<InfotainmentDisplay>
             crossAxisCount: 4,
             crossAxisSpacing: 16,
             mainAxisSpacing: 16,
-            childAspectRatio: 1.2,
+            childAspectRatio: 1.5,
             children: [
               _buildQuickCard(Icons.phone, 'Телефон', () {}),
               _buildQuickCard(Icons.message, 'Сообщения', () {}),
@@ -253,13 +253,13 @@ class _InfotainmentDisplayState extends State<InfotainmentDisplay>
 
   /// Медиа
   Widget _buildMediaTab() {
-    return Padding(
-      padding: const EdgeInsets.all(16),
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(12),
       child: Column(
         children: [
           // Текущий трек
           Container(
-            height: 120,
+            height: 90,
             decoration: BoxDecoration(
               gradient: AutomotiveTheme.gaugeGradient,
               borderRadius: BorderRadius.circular(16),
@@ -354,13 +354,13 @@ class _InfotainmentDisplayState extends State<InfotainmentDisplay>
 
   /// Климат-контроль
   Widget _buildClimateTab() {
-    return Padding(
-      padding: const EdgeInsets.all(16),
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(12),
       child: Column(
         children: [
           // Текущая температура
           Container(
-            height: 120,
+            height: 100,
             decoration: BoxDecoration(
               gradient: AutomotiveTheme.gaugeGradient,
               borderRadius: BorderRadius.circular(16),

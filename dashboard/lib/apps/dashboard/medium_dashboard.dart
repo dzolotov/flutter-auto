@@ -247,7 +247,7 @@ class MediumDashboard extends ConsumerWidget {
 
   Widget _buildInfoPanel(Map<String, dynamic> canData) {
     return Container(
-      padding: EdgeInsets.all(8),
+      padding: EdgeInsets.all(2),
       decoration: BoxDecoration(
         color: AutomotiveTheme.surfaceDark.withOpacity(0.5),
         borderRadius: BorderRadius.circular(8),
@@ -256,20 +256,18 @@ class MediumDashboard extends ConsumerWidget {
         ),
       ),
       child: Column(
+        mainAxisSize: MainAxisSize.min,
         children: [
           Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
-              _buildMiniInfo('ПЕДАЛЬ ГАЗА', '${(canData['acceleratorPedal'] ?? 0.0).toInt()}%'),
-              _buildMiniInfo('НАГРУЗКА', '${(canData['engineLoad'] ?? 0.0).toInt()}%'),
+              Expanded(child: _buildMiniInfo('ГАЗ', '${(canData['throttle'] ?? 0.0).toInt()}%')),
+              Expanded(child: _buildMiniInfo('LOAD', '${(canData['engineLoad'] ?? 0.0).toInt()}%')),
             ],
           ),
-          const SizedBox(height: 4),
           Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
-              _buildMiniInfo('СТАТУС', useSimulator ? 'SIM' : 'CAN'),
-              _buildMiniInfo('СВЯЗЬ', useSimulator ? 'OK' : 'VCAN0'),
+              Expanded(child: _buildMiniInfo('MODE', useSimulator ? 'SIM' : 'CAN')),
+              Expanded(child: _buildMiniInfo('LINK', useSimulator ? 'OK' : 'VCAN0')),
             ],
           ),
         ],
@@ -279,21 +277,27 @@ class MediumDashboard extends ConsumerWidget {
 
   Widget _buildMiniInfo(String label, String value) {
     return Column(
+      mainAxisSize: MainAxisSize.min,
+      mainAxisAlignment: MainAxisAlignment.center,
       children: [
         Text(
           label,
           style: TextStyle(
             color: Colors.grey[500],
-            fontSize: 8,
+            fontSize: 6,
           ),
+          textAlign: TextAlign.center,
+          overflow: TextOverflow.ellipsis,
         ),
         Text(
           value,
           style: TextStyle(
             color: AutomotiveTheme.primaryCyan,
-            fontSize: 12,
+            fontSize: 10,
             fontWeight: FontWeight.bold,
           ),
+          textAlign: TextAlign.center,
+          overflow: TextOverflow.ellipsis,
         ),
       ],
     );

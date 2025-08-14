@@ -227,6 +227,8 @@ class VehicleState:
     battery_voltage: float = 12.6   # Напряжение аккумулятора (В)
     ambient_temperature: float = 20.0 # Температура окружающей среды (°C)
     barometric_pressure: float = 101.3 # Барометрическое давление (кПа)
+    gear: int = 0                   # Текущая передача (0=N, 1-6)
+    speed_limit: int = 60            # Ограничение скорости (км/ч)
     
     # Состояние систем
     mil_status: bool = False        # Индикатор неисправности (MIL)
@@ -508,6 +510,9 @@ class CANBusSimulator:
         base_speed = 40 + 15 * math.sin(self._simulation_tick * 0.01)
         self.vehicle.speed = max(0, base_speed + random.gauss(0, 5))
         
+        # Городские лимиты скорости
+        self.vehicle.speed_limit = random.choice([40, 50, 60])
+        
         # RPM зависит от скорости и передачи
         self.engine.rpm = self._calculate_rpm_for_speed(self.vehicle.speed)
         self.engine.throttle_position = random.uniform(20, 60)
@@ -519,6 +524,9 @@ class CANBusSimulator:
         # Стабильная высокая скорость с небольшими вариациями
         base_speed = 110 + 10 * math.sin(self._simulation_tick * 0.005)
         self.vehicle.speed = base_speed + random.gauss(0, 3)
+        
+        # Лимиты на трассе
+        self.vehicle.speed_limit = random.choice([90, 110, 130])
         
         self.engine.rpm = self._calculate_rpm_for_speed(self.vehicle.speed, gear=6)
         self.engine.throttle_position = random.uniform(40, 70)
@@ -573,6 +581,7 @@ class CANBusSimulator:
         Использует реалистичные передаточные отношения
         """
         if speed_kmh <= 0:
+            self.vehicle.gear = 0  # Нейтраль
             return 800.0  # Холостой ход
         
         # Автоматический выбор передачи если не указана
@@ -589,6 +598,9 @@ class CANBusSimulator:
                 gear = 5
             else:
                 gear = 6
+        
+        # Сохраняем текущую передачу
+        self.vehicle.gear = gear
         
         # Передаточные отношения для 6-ступенчатой коробки передач
         gear_ratios = {
@@ -818,6 +830,14 @@ class CANBusSimulator:
                 # Абсолютное барометрическое давление: кПа
                 pressure_encoded = int(self.vehicle.barometric_pressure)
                 response_data.append(max(0, min(255, pressure_encoded)))
+                
+            elif requested_pid == 0xA5:  # Передача
+                # Текущая передача: 0=N, 1-6 = передачи
+                response_data.append(self.vehicle.gear)
+                
+            elif requested_pid == 0xA8:  # Скоростной лимит (кастомный PID)
+                # Скоростной лимит в км/ч
+                response_data.append(self.vehicle.speed_limit)
                 
             else:
                 # Неподдерживаемый PID

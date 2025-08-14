@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../services/can_bus_provider.dart';
+import '../../../services/can_bus_service.dart';
 import '../../../core/theme/automotive_theme.dart';
 
 /// Проекционный дисплей (HUD - Heads Up Display)
@@ -11,7 +11,7 @@ class HeadsUpDisplay extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final canData = ref.watch(canBusProvider);
+    final canData = ref.watch(currentCanDataProvider);
     
     return Container(
       color: Colors.black,
@@ -38,7 +38,7 @@ class HeadsUpDisplay extends ConsumerWidget {
                       flex: 1,
                       child: Column(
                         children: [
-                          Expanded(child: _buildSpeedLimit(60)),
+                          Expanded(child: _buildSpeedLimit(canData['speedLimit']?.toInt() ?? 60)),
                           const SizedBox(height: 8),
                           Expanded(child: _buildNavigationArrow()),
                         ],
@@ -67,7 +67,7 @@ class HeadsUpDisplay extends ConsumerWidget {
                     _buildInfoBlock('КРУИЗ', canData['cruise_control']?.toString() ?? 'ВЫКЛ'),
                     _buildInfoBlock('ПЕРЕДАЧА', canData['gear']?.toString() ?? 'P'),
                     _buildInfoBlock('РЕЖИМ', 'КОМФОРТ'),
-                    _buildInfoBlock('ТОПЛИВО', '${canData['fuel_level']?.toInt() ?? 50}%'),
+                    _buildInfoBlock('ТОПЛИВО', '${canData['fuelLevel']?.toInt() ?? 50}%'),
                   ],
                 ),
               ),
@@ -81,38 +81,43 @@ class HeadsUpDisplay extends ConsumerWidget {
   /// Дисплей скорости (основной элемент HUD)
   Widget _buildSpeedDisplay(double speed) {
     return Container(
+      padding: EdgeInsets.all(8),
       decoration: BoxDecoration(
         border: Border.all(color: AutomotiveTheme.primaryBlue, width: 2),
         borderRadius: BorderRadius.circular(16),
       ),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Text(
-            speed.toInt().toString(),
-            style: TextStyle(
-              color: Colors.white,
-              fontSize: 72,
-              fontWeight: FontWeight.bold,
-              fontFamily: 'DigitalNumbers',
-              shadows: [
-                Shadow(
-                  offset: Offset(2, 2),
-                  blurRadius: 4,
-                  color: Colors.black.withOpacity(0.5),
-                ),
-              ],
+      child: FittedBox(
+        fit: BoxFit.scaleDown,
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              speed.toInt().toString(),
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 48,
+                fontWeight: FontWeight.bold,
+                fontFamily: 'DigitalNumbers',
+                shadows: [
+                  Shadow(
+                    offset: Offset(2, 2),
+                    blurRadius: 4,
+                    color: Colors.black.withOpacity(0.5),
+                  ),
+                ],
+              ),
             ),
-          ),
-          Text(
-            'км/ч',
-            style: TextStyle(
-              color: AutomotiveTheme.primaryBlue,
-              fontSize: 16,
-              fontWeight: FontWeight.w500,
+            Text(
+              'км/ч',
+              style: TextStyle(
+                color: AutomotiveTheme.primaryBlue,
+                fontSize: 12,
+                fontWeight: FontWeight.w500,
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -120,12 +125,14 @@ class HeadsUpDisplay extends ConsumerWidget {
   /// Лимит скорости
   Widget _buildSpeedLimit(int limit) {
     return Container(
+      padding: EdgeInsets.all(4),
       decoration: BoxDecoration(
         color: Colors.white,
         shape: BoxShape.circle,
         border: Border.all(color: Colors.red, width: 3),
       ),
-      child: Center(
+      child: FittedBox(
+        fit: BoxFit.scaleDown,
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -133,7 +140,7 @@ class HeadsUpDisplay extends ConsumerWidget {
               limit.toString(),
               style: TextStyle(
                 color: Colors.black,
-                fontSize: 24,
+                fontSize: 18,
                 fontWeight: FontWeight.bold,
               ),
             ),
@@ -141,7 +148,7 @@ class HeadsUpDisplay extends ConsumerWidget {
               'км/ч',
               style: TextStyle(
                 color: Colors.black,
-                fontSize: 8,
+                fontSize: 6,
               ),
             ),
           ],
@@ -192,11 +199,11 @@ class HeadsUpDisplay extends ConsumerWidget {
     final warnings = <Widget>[];
     
     // Проверка различных предупреждений
-    if (_isSpeedWarning(canData['speed']?.toDouble() ?? 0.0)) {
+    if (_isSpeedWarning(canData['speed']?.toDouble() ?? 0.0, canData)) {
       warnings.add(_buildWarningItem(Icons.speed, 'ПРЕВЫШЕНИЕ СКОРОСТИ', AutomotiveTheme.warningRed));
     }
     
-    if (_isFuelWarning(canData['fuel_level']?.toDouble() ?? 50.0)) {
+    if (_isFuelWarning(canData['fuelLevel']?.toDouble() ?? 50.0)) {
       warnings.add(_buildWarningItem(Icons.local_gas_station, 'НИЗКИЙ УРОВЕНЬ ТОПЛИВА', AutomotiveTheme.accentOrange));
     }
     
@@ -273,41 +280,45 @@ class HeadsUpDisplay extends ConsumerWidget {
   /// Информационный блок
   Widget _buildInfoBlock(String label, String value) {
     return Container(
-      padding: const EdgeInsets.all(8),
+      padding: const EdgeInsets.all(4),
       decoration: BoxDecoration(
         gradient: AutomotiveTheme.gaugeGradient,
         borderRadius: BorderRadius.circular(8),
         border: Border.all(color: Colors.grey[700]!),
       ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Text(
-            label,
-            style: TextStyle(
-              color: Colors.grey[400],
-              fontSize: 10,
-              fontWeight: FontWeight.w500,
+      child: FittedBox(
+        fit: BoxFit.scaleDown,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              label,
+              style: TextStyle(
+                color: Colors.grey[400],
+                fontSize: 8,
+                fontWeight: FontWeight.w500,
+              ),
             ),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            value,
-            style: TextStyle(
-              color: Colors.white,
-              fontSize: 14,
-              fontWeight: FontWeight.bold,
-              fontFamily: 'DigitalNumbers',
+            const SizedBox(height: 2),
+            Text(
+              value,
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 11,
+                fontWeight: FontWeight.bold,
+                fontFamily: 'DigitalNumbers',
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
 
   /// Проверка превышения скорости
-  bool _isSpeedWarning(double speed) {
-    return speed > 65; // Превышение на 5 км/ч от лимита 60
+  bool _isSpeedWarning(double speed, Map<String, dynamic> canData) {
+    final speedLimit = canData['speedLimit']?.toDouble() ?? 60.0;
+    return speed > (speedLimit + 5); // Превышение на 5 км/ч от лимита
   }
 
   /// Проверка низкого уровня топлива
@@ -317,7 +328,7 @@ class HeadsUpDisplay extends ConsumerWidget {
 
   /// Проверка предупреждений двигателя
   bool _isEngineWarning(Map<String, dynamic> canData) {
-    final engineTemp = canData['engine_temp']?.toDouble() ?? 90.0;
+    final engineTemp = canData['engineTemp']?.toDouble() ?? 90.0;
     final oilPressure = canData['oil_pressure']?.toDouble() ?? 2.5;
     
     return engineTemp > 110.0 || oilPressure < 1.0;

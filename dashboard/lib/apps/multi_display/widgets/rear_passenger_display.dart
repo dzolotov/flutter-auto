@@ -119,12 +119,13 @@ class _RearPassengerDisplayState extends State<RearPassengerDisplay> {
   /// Видео контент
   Widget _buildVideoTab() {
     return Padding(
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        children: [
+      padding: const EdgeInsets.all(12),
+      child: SingleChildScrollView(
+        child: Column(
+          children: [
           // Видеоплеер (заглушка)
-          Expanded(
-            flex: 3,
+          Container(
+            height: 300,
             child: Container(
               decoration: BoxDecoration(
                 color: Colors.grey[900],
@@ -134,30 +135,34 @@ class _RearPassengerDisplayState extends State<RearPassengerDisplay> {
               child: Stack(
                 children: [
                   Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(
-                          Icons.play_circle_outline,
-                          size: 64,
-                          color: Colors.grey[400],
-                        ),
-                        const SizedBox(height: 16),
-                        Text(
-                          'Видеоплеер',
-                          style: TextStyle(
+                    child: FittedBox(
+                      fit: BoxFit.scaleDown,
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            Icons.play_circle_outline,
+                            size: 48,
                             color: Colors.grey[400],
-                            fontSize: 18,
                           ),
-                        ),
-                        Text(
-                          'Подключите USB или выберите онлайн контент',
-                          style: TextStyle(
-                            color: Colors.grey[500],
-                            fontSize: 12,
+                          const SizedBox(height: 8),
+                          Text(
+                            'Видеоплеер',
+                            style: TextStyle(
+                              color: Colors.grey[400],
+                              fontSize: 14,
+                            ),
                           ),
-                        ),
-                      ],
+                          Text(
+                            'Подключите USB или выберите онлайн контент',
+                            style: TextStyle(
+                              color: Colors.grey[500],
+                              fontSize: 10,
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                   
@@ -185,37 +190,42 @@ class _RearPassengerDisplayState extends State<RearPassengerDisplay> {
           const SizedBox(height: 16),
           
           // Список доступного контента
-          Expanded(
-            flex: 1,
+          Container(
+            height: 120,
             child: Container(
               decoration: BoxDecoration(
                 gradient: AutomotiveTheme.gaugeGradient,
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(color: Colors.grey[700]!),
               ),
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.all(8),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
                 children: [
                   Text(
                     'Доступный контент',
-                    style: Theme.of(context).textTheme.titleMedium,
+                    style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
                   ),
-                  const SizedBox(height: 12),
-                  Expanded(
-                    child: ListView(
-                      children: [
-                        _buildContentItem('Фильм 1', 'Боевик • 2ч 15мин', Icons.movie),
-                        _buildContentItem('Мультфильм', 'Семейный • 1ч 30мин', Icons.animation),
-                        _buildContentItem('Сериал 1x01', 'Драма • 45мин', Icons.tv),
-                      ],
+                  const SizedBox(height: 4),
+                  Flexible(
+                    child: SingleChildScrollView(
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          _buildContentItem('Фильм 1', 'Боевик • 2ч 15мин', Icons.movie),
+                          _buildContentItem('Мультфильм', 'Семейный • 1ч 30мин', Icons.animation),
+                          _buildContentItem('Сериал 1x01', 'Драма • 45мин', Icons.tv),
+                        ],
+                      ),
                     ),
                   ),
                 ],
               ),
             ),
           ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -243,12 +253,12 @@ class _RearPassengerDisplayState extends State<RearPassengerDisplay> {
   /// Музыка
   Widget _buildMusicTab() {
     return Padding(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(12),
       child: Column(
         children: [
           // Текущий трек
           Container(
-            height: 100,
+            height: 80,
             decoration: BoxDecoration(
               gradient: AutomotiveTheme.gaugeGradient,
               borderRadius: BorderRadius.circular(12),
@@ -353,12 +363,12 @@ class _RearPassengerDisplayState extends State<RearPassengerDisplay> {
   /// Климат-контроль
   Widget _buildClimateTab() {
     return Padding(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(12),
       child: Column(
         children: [
           // Температура для этой зоны
           Container(
-            height: 120,
+            height: 90,
             decoration: BoxDecoration(
               gradient: AutomotiveTheme.gaugeGradient,
               borderRadius: BorderRadius.circular(16),
@@ -459,11 +469,13 @@ class _RearPassengerDisplayState extends State<RearPassengerDisplay> {
   /// Элемент контента
   Widget _buildContentItem(String title, String subtitle, IconData icon) {
     return ListTile(
-      leading: Icon(icon, color: AutomotiveTheme.primaryBlue),
-      title: Text(title, style: TextStyle(color: Colors.white, fontSize: 14)),
-      subtitle: Text(subtitle, style: TextStyle(color: Colors.grey[400], fontSize: 12)),
+      leading: Icon(icon, color: AutomotiveTheme.primaryBlue, size: 20),
+      title: Text(title, style: TextStyle(color: Colors.white, fontSize: 12)),
+      subtitle: Text(subtitle, style: TextStyle(color: Colors.grey[400], fontSize: 10)),
       onTap: () {},
       dense: true,
+      contentPadding: EdgeInsets.symmetric(horizontal: 4),
+      visualDensity: VisualDensity.compact,
     );
   }
 
