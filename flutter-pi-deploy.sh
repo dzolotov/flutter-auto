@@ -675,18 +675,18 @@ ENDSSH
 copy_obd_simulator() {
     log_step "Копирование физического OBD симулятора"
     
-    # Физический симулятор уже должен быть на Pi, но проверим
+    # Проверяем наличие физического симулятора на Pi
     ssh "$SSH_HOST" "ls -la ~/physics_obd_sim.py 2>/dev/null" > /dev/null 2>&1
     if [ $? -eq 0 ]; then
         log_success "Физический OBD симулятор найден на Pi"
     else
-        # Если нет физического, проверяем старый симулятор
-        if [ -f "$SCRIPT_DIR/python_can_simulator/can_simulator.py" ]; then
-            log_info "Копируем fallback CAN симулятор на Pi..."
-            scp "$SCRIPT_DIR/python_can_simulator/can_simulator.py" "$SSH_HOST:~/can_simulator.py"
-            log_success "CAN симулятор скопирован"
+        # Копируем физический симулятор из проекта
+        if [ -f "$SCRIPT_DIR/python_can_simulator/physics_obd_sim.py" ]; then
+            log_info "Копируем физический OBD симулятор на Pi..."
+            scp "$SCRIPT_DIR/python_can_simulator/physics_obd_sim.py" "$SSH_HOST:~/physics_obd_sim.py"
+            log_success "Физический OBD симулятор скопирован"
         else
-            log_warning "Симуляторы не найдены"
+            log_warning "Физический OBD симулятор не найден в проекте"
         fi
     fi
 }
@@ -717,8 +717,6 @@ if ip link show vcan0 &>/dev/null; then
     if [ -f ~/physics_obd_sim.py ]; then
         echo "Запуск физического OBD симулятора на vcan0..."
         # Останавливаем старые симуляторы если запущены
-        pkill -f 'can_simulator.py' 2>/dev/null || true
-        pkill -f 'obd_sim.py' 2>/dev/null || true
         pkill -f 'physics_obd_sim.py' 2>/dev/null || true
         
         # Запускаем физический симулятор в фоне
@@ -737,20 +735,9 @@ if ip link show vcan0 &>/dev/null; then
             echo "  Проверьте логи: ~/physics_sim.log"
             tail -10 ~/physics_sim.log 2>/dev/null || true
         fi
-    elif [ -f ~/can_simulator.py ]; then
-        # Fallback на старый симулятор
-        echo "Запуск CAN симулятора на vcan0..."
-        nohup python3 ~/can_simulator.py > ~/can_simulator.log 2>&1 &
-        SIM_PID=$!
-        sleep 2
-        if kill -0 $SIM_PID 2>/dev/null; then
-            echo "✓ CAN симулятор запущен (PID: $SIM_PID)"
-            echo "  Логи: ~/can_simulator.log"
-        else
-            echo "✗ Ошибка запуска CAN симулятора"
-        fi
     else
-        echo "Предупреждение: Симулятор не найден"
+        echo "Предупреждение: Физический OBD симулятор не найден"
+        echo "  Приложение будет работать без CAN данных"
     fi
 else
     echo "Предупреждение: Интерфейс vcan0 не найден"
