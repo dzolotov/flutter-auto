@@ -121,12 +121,41 @@ class _MultiDisplayAppState extends ConsumerState<MultiDisplayApp> {
 
   /// Создает мульти-дисплейный вид
   Widget _buildMultiDisplayView(DisplaySystemState displayState) {
+    final screenSize = MediaQuery.of(context).size;
+    final isSmallScreen = screenSize.width <= 800 || screenSize.height <= 480;
+    
+    if (isSmallScreen) {
+      // Упрощенный вид для маленьких экранов
+      return Column(
+        children: [
+          // Компактный селектор дисплеев
+          Container(
+            height: 50,
+            child: ListView.builder(
+              scrollDirection: Axis.horizontal,
+              itemCount: _displays.length,
+              itemBuilder: (context, index) {
+                return _buildCompactDisplayTab(index, _displays[index]);
+              },
+            ),
+          ),
+          // Содержимое дисплея
+          Expanded(
+            child: Container(
+              color: Colors.black,
+              child: _buildDisplayContent(),
+            ),
+          ),
+        ],
+      );
+    }
+    
     return Row(
       children: [
         // Боковая панель с выбором дисплея
         if (!_isFullscreenMode)
           Container(
-            width: 250,
+            width: 200,
             child: _buildDisplaySelector(),
           ),
         
@@ -136,30 +165,22 @@ class _MultiDisplayAppState extends ConsumerState<MultiDisplayApp> {
             children: [
               // Заголовок выбранного дисплея
               Container(
-                height: 80,
-                padding: const EdgeInsets.all(16),
+                height: 60,
+                padding: const EdgeInsets.all(8),
                 child: _buildDisplayHeader(),
               ),
               
               // Содержимое дисплея
               Expanded(
                 child: Container(
-                  margin: const EdgeInsets.all(16),
+                  margin: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
                     color: Colors.black,
-                    borderRadius: BorderRadius.circular(16),
+                    borderRadius: BorderRadius.circular(8),
                     border: Border.all(color: Colors.grey[700]!),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.5),
-                        spreadRadius: 2,
-                        blurRadius: 10,
-                        offset: Offset(0, 4),
-                      ),
-                    ],
                   ),
                   child: ClipRRect(
-                    borderRadius: BorderRadius.circular(16),
+                    borderRadius: BorderRadius.circular(8),
                     child: _buildDisplayContent(),
                   ),
                 ),
@@ -167,8 +188,8 @@ class _MultiDisplayAppState extends ConsumerState<MultiDisplayApp> {
               
               // Информация о дисплее
               Container(
-                height: 60,
-                padding: const EdgeInsets.all(16),
+                height: 40,
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 child: _buildDisplayInfo(),
               ),
             ],
@@ -191,21 +212,21 @@ class _MultiDisplayAppState extends ConsumerState<MultiDisplayApp> {
         children: [
           // Заголовок
           Container(
-            height: 80,
-            padding: const EdgeInsets.all(16),
+            height: 50,
+            padding: const EdgeInsets.all(8),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Text(
                   'Дисплеи',
-                  style: Theme.of(context).textTheme.titleLarge,
+                  style: Theme.of(context).textTheme.titleMedium,
                 ),
                 Text(
                   '${_displays.length} подключено',
                   style: TextStyle(
                     color: Colors.grey[400],
-                    fontSize: 12,
+                    fontSize: 10,
                   ),
                 ),
               ],
@@ -224,25 +245,27 @@ class _MultiDisplayAppState extends ConsumerState<MultiDisplayApp> {
           
           // Кнопки управления
           Container(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.all(8),
             child: Column(
               children: [
                 ElevatedButton.icon(
                   onPressed: _syncAllDisplays,
-                  icon: Icon(Icons.sync),
-                  label: Text('Синхронизировать'),
+                  icon: Icon(Icons.sync, size: 16),
+                  label: Text('Синхр.', style: TextStyle(fontSize: 12)),
                   style: ElevatedButton.styleFrom(
-                    minimumSize: Size(double.infinity, 40),
+                    minimumSize: Size(double.infinity, 32),
+                    padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                   ),
                 ),
-                const SizedBox(height: 8),
+                const SizedBox(height: 4),
                 ElevatedButton.icon(
                   onPressed: _mirrorDisplays,
-                  icon: Icon(Icons.flip_to_front),
-                  label: Text('Зеркалирование'),
+                  icon: Icon(Icons.flip_to_front, size: 16),
+                  label: Text('Зеркало', style: TextStyle(fontSize: 12)),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.grey[700],
-                    minimumSize: Size(double.infinity, 40),
+                    minimumSize: Size(double.infinity, 32),
+                    padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                   ),
                 ),
               ],
@@ -258,7 +281,7 @@ class _MultiDisplayAppState extends ConsumerState<MultiDisplayApp> {
     final isSelected = _selectedDisplay == index;
     
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      margin: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
       child: GestureDetector(
         onTap: () => setState(() => _selectedDisplay = index),
         child: AnimatedContainer(
@@ -267,7 +290,7 @@ class _MultiDisplayAppState extends ConsumerState<MultiDisplayApp> {
             color: isSelected 
                 ? AutomotiveTheme.primaryBlue.withOpacity(0.3)
                 : Colors.transparent,
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(8),
             border: Border.all(
               color: isSelected 
                   ? AutomotiveTheme.primaryBlue 
@@ -276,7 +299,7 @@ class _MultiDisplayAppState extends ConsumerState<MultiDisplayApp> {
             ),
           ),
           child: Padding(
-            padding: const EdgeInsets.all(12),
+            padding: const EdgeInsets.all(8),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -287,45 +310,95 @@ class _MultiDisplayAppState extends ConsumerState<MultiDisplayApp> {
                       color: isSelected 
                           ? AutomotiveTheme.primaryBlue 
                           : Colors.grey[400],
-                      size: 24,
+                      size: 18,
                     ),
-                    const SizedBox(width: 8),
+                    const SizedBox(width: 4),
                     Expanded(
                       child: Text(
                         display.name,
                         style: TextStyle(
                           color: isSelected ? Colors.white : Colors.grey[300],
                           fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                          fontSize: 12,
                         ),
+                        overflow: TextOverflow.ellipsis,
                       ),
                     ),
                     _buildDisplayStatus(display),
                   ],
                 ),
                 
-                const SizedBox(height: 8),
+                const SizedBox(height: 4),
                 
                 Text(
                   display.description,
                   style: TextStyle(
                     color: Colors.grey[400],
-                    fontSize: 11,
+                    fontSize: 9,
                   ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
                 
-                const SizedBox(height: 4),
+                const SizedBox(height: 2),
                 
                 Text(
                   display.resolution,
                   style: TextStyle(
                     color: Colors.grey[500],
-                    fontSize: 10,
+                    fontSize: 8,
                     fontFamily: 'DigitalNumbers',
                   ),
                 ),
               ],
             ),
           ),
+        ),
+      ),
+    );
+  }
+  
+  /// Создает компактную вкладку дисплея для маленьких экранов
+  Widget _buildCompactDisplayTab(int index, DisplayInfo display) {
+    final isSelected = _selectedDisplay == index;
+    
+    return GestureDetector(
+      onTap: () => setState(() => _selectedDisplay = index),
+      child: Container(
+        margin: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        decoration: BoxDecoration(
+          color: isSelected 
+              ? AutomotiveTheme.primaryBlue.withOpacity(0.3)
+              : Colors.grey[800],
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(
+            color: isSelected 
+                ? AutomotiveTheme.primaryBlue 
+                : Colors.grey[600]!,
+            width: isSelected ? 2 : 1,
+          ),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              display.icon,
+              color: isSelected 
+                  ? AutomotiveTheme.primaryBlue 
+                  : Colors.grey[400],
+              size: 16,
+            ),
+            const SizedBox(width: 4),
+            Text(
+              display.name,
+              style: TextStyle(
+                color: isSelected ? Colors.white : Colors.grey[300],
+                fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                fontSize: 11,
+              ),
+            ),
+          ],
         ),
       ),
     );
@@ -346,41 +419,49 @@ class _MultiDisplayAppState extends ConsumerState<MultiDisplayApp> {
   /// Создает заголовок дисплея
   Widget _buildDisplayHeader() {
     final selectedDisplay = _displays[_selectedDisplay];
+    final screenSize = MediaQuery.of(context).size;
+    final isSmallScreen = screenSize.width <= 800 || screenSize.height <= 480;
     
     return Container(
       decoration: BoxDecoration(
         gradient: AutomotiveTheme.gaugeGradient,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(8),
         border: Border.all(color: Colors.grey[700]!),
       ),
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(8),
       child: Row(
         children: [
           Icon(
             selectedDisplay.icon,
             color: AutomotiveTheme.primaryBlue,
-            size: 32,
+            size: isSmallScreen ? 20 : 24,
           ),
-          const SizedBox(width: 16),
+          const SizedBox(width: 8),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Text(
                   selectedDisplay.name,
-                  style: Theme.of(context).textTheme.titleLarge,
-                ),
-                Text(
-                  selectedDisplay.description,
                   style: TextStyle(
-                    color: Colors.grey[400],
-                    fontSize: 12,
+                    fontSize: isSmallScreen ? 14 : 16,
+                    fontWeight: FontWeight.bold,
                   ),
                 ),
+                if (!isSmallScreen)
+                  Text(
+                    selectedDisplay.description,
+                    style: TextStyle(
+                      color: Colors.grey[400],
+                      fontSize: 10,
+                    ),
+                  ),
               ],
             ),
           ),
-          _buildDisplayControls(selectedDisplay),
+          if (!isSmallScreen)
+            _buildDisplayControls(selectedDisplay),
         ],
       ),
     );
@@ -431,22 +512,28 @@ class _MultiDisplayAppState extends ConsumerState<MultiDisplayApp> {
   /// Создает информационную панель дисплея
   Widget _buildDisplayInfo() {
     final selectedDisplay = _displays[_selectedDisplay];
+    final screenSize = MediaQuery.of(context).size;
+    final isSmallScreen = screenSize.width <= 800 || screenSize.height <= 480;
+    
+    if (isSmallScreen) {
+      return Container();
+    }
     
     return Container(
       decoration: BoxDecoration(
         gradient: AutomotiveTheme.gaugeGradient,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(8),
         border: Border.all(color: Colors.grey[700]!),
       ),
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       child: Row(
         children: [
           _buildInfoItem('Разрешение', selectedDisplay.resolution),
-          const SizedBox(width: 24),
+          const SizedBox(width: 16),
           _buildInfoItem('FPS', '60'),
-          const SizedBox(width: 24),
+          const SizedBox(width: 16),
           _buildInfoItem('Яркость', '80%'),
-          const SizedBox(width: 24),
+          const SizedBox(width: 16),
           _buildInfoItem('Статус', 'Активен'),
         ],
       ),

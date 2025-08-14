@@ -25,10 +25,10 @@ void main() async {
     overlays: [],
   );
   
-  // Принудительная портретная ориентация для повернутой панели
+  // Ландшафтная ориентация для автомобильных дисплеев (800x480)
   await SystemChrome.setPreferredOrientations([
-    DeviceOrientation.portraitUp,
-    DeviceOrientation.portraitDown,
+    DeviceOrientation.landscapeLeft,
+    DeviceOrientation.landscapeRight,
   ]);
   
   runApp(
